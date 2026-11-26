@@ -205,7 +205,8 @@ def test_main_json_output_ends_with_newline(
         {"word": "apple", "count": 2},
         {"word": "banana", "count": 1},
     ]
-    assert out == json.dumps(json.loads(out), indent=2) + "\n"
+    assert out == '[{"word": "apple", "count": 2}, {"word": "banana", "count": 1}]\n'
+    assert out.count("\n") == 1
 
 
 def test_main_json_empty_input_is_empty_array_with_newline(
@@ -308,6 +309,19 @@ def test_python_m_wordfreq_json_output_ends_with_newline() -> None:
         {"word": "red", "count": 2},
         {"word": "blue", "count": 1},
     ]
+
+
+def test_python_m_wordfreq_stdin_invalid_utf8_does_not_crash() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "wordfreq"],
+        input=b"caf\xe9 caf\xe9\n",
+        capture_output=True,
+        cwd=REPO_ROOT,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert result.stderr == b""
+    assert result.stdout.endswith(b"\n")
 
 
 def test_python_m_wordfreq_empty_tsv_prints_nothing() -> None:

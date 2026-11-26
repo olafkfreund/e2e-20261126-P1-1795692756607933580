@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
@@ -83,9 +84,21 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _read_stdin() -> str:
+    """Read stdin as UTF-8, replacing invalid bytes instead of failing."""
+    buffer = getattr(sys.stdin, "buffer", None)
+    if buffer is None:
+        return sys.stdin.read()
+    wrapper = io.TextIOWrapper(buffer, encoding="utf-8", errors="replace")
+    try:
+        return wrapper.read()
+    finally:
+        wrapper.detach()
+
+
 def _read_input(path: str) -> str:
     if path == _STDIN_PATH:
-        return sys.stdin.read()
+        return _read_stdin()
     with open(path, encoding="utf-8", errors="replace") as handle:
         return handle.read()
 
@@ -120,7 +133,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.json:
         payload = [{"word": word, "count": count} for word, count in rows]
-        sys.stdout.write(json.dumps(payload, indent=2) + "\n")
+        sys.stdout.write(json.dumps(payload) + "\n")
     else:
         table = format_table(rows)
         if table:
